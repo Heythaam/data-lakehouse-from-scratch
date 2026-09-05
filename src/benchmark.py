@@ -81,9 +81,13 @@ def run_benchmark(conn, title, sql):
     }
 
 
+def run_all_benchmarks(conn):
+    return [run_benchmark(conn, title, sql) for title, sql in BENCHMARKS.items()]
+
+
 def main():
     conn = get_connection()
-    results = [run_benchmark(conn, title, sql) for title, sql in BENCHMARKS.items()]
+    results = run_all_benchmarks(conn)
 
     print(f"\n{'=' * 80}")
     print("Benchmark summary")

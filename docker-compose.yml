@@ -66,6 +66,54 @@ services:
     depends_on:
       - trino
 
+  spark-master:
+    image: bitnamilegacy/spark:3.5.6
+    container_name: spark-master
+    environment:
+      SPARK_MODE: master
+      SPARK_RPC_AUTHENTICATION_ENABLE: "no"
+      SPARK_RPC_ENCRYPTION_ENABLE: "no"
+      SPARK_SSL_ENABLED: "no"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "7077:7077"   # Spark master RPC
+      - "8082:8080"   # Spark master web UI (remapped: 8080 is already Trino's)
+      - "4040:4040"   # Spark application (driver) UI — active only while a job runs
+    volumes:
+      # benchmark_spark.py runs as `spark-submit` inside this container (via
+      # `docker compose exec`), not on the host like the other scripts — the
+      # host has no JVM, and PySpark's driver needs one even in client mode
+      # against a remote master.
+      - ./src:/app:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  spark-worker:
+    image: bitnamilegacy/spark:3.5.6
+    container_name: spark-worker
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_CORES: "2"
+      SPARK_WORKER_MEMORY: "2G"
+      SPARK_RPC_AUTHENTICATION_ENABLE: "no"
+      SPARK_RPC_ENCRYPTION_ENABLE: "no"
+      SPARK_SSL_ENABLED: "no"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "8083:8081"   # Spark worker web UI
+    depends_on:
+      - spark-master
+
 volumes:
   minio_data:
   nessie_data:

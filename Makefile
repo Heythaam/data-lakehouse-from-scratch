@@ -19,5 +19,11 @@ pipeline:
 	python src/load_full_year.py
 	python src/benchmark.py
 
+benchmark-spark:
+	docker compose exec -T -u 0 -e HOME=/tmp spark-master bash -c "pip install --quiet pandas python-dotenv && spark-submit --master spark://spark-master:7077 --conf spark.jars.ivy=/tmp/.ivy2 /app/benchmark_spark.py"
+
+benchmark-all:
+	python src/benchmark_comparison.py
+
 test:
 	pytest tests/ -v
