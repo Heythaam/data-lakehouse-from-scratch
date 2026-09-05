@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nessie:
+    image: ghcr.io/projectnessie/nessie:latest
+    container_name: nessie
+    ports:
+      - "19120:19120"
+    environment:
+      - nessie.catalog.default-warehouse=warehouse
+      - nessie.catalog.warehouses.warehouse.location=s3://${MINIO_BUCKET}/
+      - nessie.catalog.service.s3.default-options.endpoint=http://minio:9000/
+      - nessie.catalog.service.s3.default-options.external-endpoint=http://localhost:9000/
+      - nessie.catalog.service.s3.default-options.path-style-access=true
+      - nessie.catalog.service.s3.default-options.region=us-east-1
+      - nessie.catalog.service.s3.default-options.access-key=urn:nessie-secret:quarkus:nessie.catalog.secrets.access-key
+      - nessie.catalog.secrets.access-key.name=${MINIO_ROOT_USER}
+      - nessie.catalog.secrets.access-key.secret=${MINIO_ROOT_PASSWORD}
+      - NESSIE_VERSION_STORE_TYPE=ROCKSDB
+      - NESSIE_VERSION_STORE_PERSIST_ROCKS_DATABASE_PATH=/var/lib/nessie/db
+    volumes:
+      - nessie_data:/var/lib/nessie/db
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  trino:
+    image: trinodb/trino
+    container_name: trino
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino/catalog:/etc/trino/catalog
+    depends_on:
+      - nessie
+      - minio
+
+  trino-worker:
+    image: trinodb/trino
+    container_name: trino-worker
+    environment:
+      TRINO_NODE_TYPE: worker
+    volumes:
+      - ./trino/catalog:/etc/trino/catalog
+      - ./trino/worker/node.properties:/etc/trino/node.properties
+      - ./trino/worker/config.properties:/etc/trino/config.properties
+    depends_on:
+      - trino
+
+volumes:
+  minio_data:
+  nessie_data:

@@ -1,0 +1,7 @@
+boto3==1.43.89
+pyiceberg[pyarrow,s3fs]==0.12.0
+pyarrow==24.0.0
+trino==0.339.0
+pandas==2.3.3
+python-dotenv==1.2.2
+requests==2.34.2

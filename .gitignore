@@ -1,0 +1,21 @@
+# Secrets / local config
+.env
+trino/catalog/iceberg.properties
+
+# Data (large binaries — don't commit raw/processed datasets)
+data/raw/*
+data/parquet/*
+!data/raw/.gitkeep
+!data/parquet/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
