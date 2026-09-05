@@ -20,8 +20,6 @@ def _require_env(name):
 
 
 MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
-MINIO_ROOT_USER = _require_env("MINIO_ROOT_USER")
-MINIO_ROOT_PASSWORD = _require_env("MINIO_ROOT_PASSWORD")
 MINIO_BUCKET = os.environ.get("MINIO_BUCKET", "lakehouse")
 
 LOCAL_FILE = os.path.join("data", "raw", "yellow_tripdata_2023-01.parquet")
@@ -32,8 +30,8 @@ def get_client():
     return boto3.client(
         "s3",
         endpoint_url=MINIO_ENDPOINT,
-        aws_access_key_id=MINIO_ROOT_USER,
-        aws_secret_access_key=MINIO_ROOT_PASSWORD,
+        aws_access_key_id=_require_env("MINIO_ROOT_USER"),
+        aws_secret_access_key=_require_env("MINIO_ROOT_PASSWORD"),
         config=Config(signature_version="s3v4"),
         region_name="us-east-1",
     )

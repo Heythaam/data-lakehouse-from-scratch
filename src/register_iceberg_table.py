@@ -26,8 +26,6 @@ NESSIE_ICEBERG_REST_URI = os.environ.get(
     "NESSIE_ICEBERG_REST_URI", "http://localhost:19120/iceberg/main"
 )
 MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
-MINIO_ROOT_USER = _require_env("MINIO_ROOT_USER")
-MINIO_ROOT_PASSWORD = _require_env("MINIO_ROOT_PASSWORD")
 
 LOCAL_FILE = os.path.join("data", "raw", "yellow_tripdata_2023-01.parquet")
 NAMESPACE = "nyc_taxi"
@@ -41,8 +39,8 @@ def get_catalog():
         **{
             "uri": NESSIE_ICEBERG_REST_URI,
             "s3.endpoint": MINIO_ENDPOINT,
-            "s3.access-key-id": MINIO_ROOT_USER,
-            "s3.secret-access-key": MINIO_ROOT_PASSWORD,
+            "s3.access-key-id": _require_env("MINIO_ROOT_USER"),
+            "s3.secret-access-key": _require_env("MINIO_ROOT_PASSWORD"),
             "s3.path-style-access": "true",
             "s3.region": "us-east-1",
         },

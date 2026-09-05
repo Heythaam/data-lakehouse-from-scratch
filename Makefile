@@ -18,3 +18,6 @@ pipeline:
 	python src/register_iceberg_table.py
 	python src/load_full_year.py
 	python src/benchmark.py
+
+test:
+	pytest tests/ -v

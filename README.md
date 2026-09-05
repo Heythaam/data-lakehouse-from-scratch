@@ -134,19 +134,33 @@ make pipeline
 
 `make pipeline` enchaîne `upload_to_minio.py`, `register_iceberg_table.py` (crée la table avec janvier), `load_full_year.py` (charge février à décembre, idempotent) et `benchmark.py`. Chaque script reste exécutable seul. L'UI Trino est sur `http://localhost:8080`, la console MinIO sur `http://localhost:9001`.
 
+Tests unitaires (pas besoin de la stack Docker — tout est mocké : boto3, PyIceberg, trino) :
+
+```bash
+pip install -r requirements-dev.txt
+make test
+```
+
 ## 8. Structure du projet
 
 ```
 .
 ├── docker-compose.yml         # 5 services : minio, nessie, trino, trino-worker + volumes
-├── Makefile                   # up/down/logs/restart/status/pipeline
-├── requirements.txt           # dépendances Python épinglées
+├── Makefile                   # up/down/logs/restart/status/pipeline/test
+├── requirements.txt           # dépendances Python épinglées (runtime)
+├── requirements-dev.txt       # + pytest, pour lancer les tests
 ├── .env.example                # gabarit d'identifiants (le vrai .env est gitignored)
 ├── data/
 │   ├── raw/                   # Parquet source, gitignored (12 fichiers mensuels)
 │   └── parquet/               # vide, réservé pour des exports futurs
 ├── docs/                      # vide
-├── tests/                     # vide
+├── tests/
+│   ├── conftest.py               # ajoute src/ au sys.path
+│   ├── test_upload_to_minio.py   # object_exists/ensure_bucket/get_client, boto3 mocké
+│   ├── test_register_iceberg_table.py  # partition spec, dérivation du mois, namespace
+│   ├── test_load_full_year.py    # download, et le vrai bug casse+type (fixture dédiée)
+│   ├── test_query_with_trino.py  # run_query avec un curseur trino mocké
+│   └── test_benchmark.py         # run_benchmark avec un curseur trino mocké
 ├── trino/
 │   ├── catalog/
 │   │   ├── iceberg.properties.template   # gabarit versionné (placeholders ${VAR})
